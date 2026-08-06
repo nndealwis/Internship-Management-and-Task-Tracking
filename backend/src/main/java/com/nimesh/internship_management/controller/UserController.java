@@ -1,7 +1,9 @@
 package com.nimesh.internship_management.controller;
 
-import com.nimesh.internship_management.model.User;
+import com.nimesh.internship_management.dto.UserRequest;
+import com.nimesh.internship_management.dto.UserResponse;
 import com.nimesh.internship_management.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,24 +19,24 @@ public class UserController {
     }
 
     @GetMapping
-    public List<User> getAllUsers() {
+    public List<UserResponse> getAllUsers() {
         return userService.getAllUsers();
     }
 
     @GetMapping("/{id}")
-    public User getUserById(@PathVariable String id) {
+    public UserResponse getUserById(@PathVariable String id) {
         return userService.getUserById(id);
     }
 
     @PostMapping
-    public User createUser(@RequestBody User user) {
-        return userService.createUser(user);
+    public UserResponse createUser(@Valid @RequestBody UserRequest userRequest) {
+        return userService.createUser(userRequest);
     }
 
     @PutMapping("/{id}")
-    public User updateUser(@PathVariable String id,
-            @RequestBody User user) {
-        return userService.updateUser(id, user);
+    public UserResponse updateUser(@PathVariable String id,
+            @Valid @RequestBody UserRequest userRequest) {
+        return userService.updateUser(id, userRequest);
     }
 
     @DeleteMapping("/{id}")

@@ -2,6 +2,7 @@ package com.nimesh.internship_management.controller;
 
 import com.nimesh.internship_management.model.Task;
 import com.nimesh.internship_management.service.TaskService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,13 +28,13 @@ public class TaskController {
     }
 
     @PostMapping
-    public Task createTask(@RequestBody Task task) {
+    public Task createTask(@Valid @RequestBody Task task) {
         return taskService.createTask(task);
     }
 
     @PutMapping("/{id}")
     public Task updateTask(@PathVariable String id,
-                           @RequestBody Task task) {
+                           @Valid @RequestBody Task task) {
         return taskService.updateTask(id, task);
     }
 

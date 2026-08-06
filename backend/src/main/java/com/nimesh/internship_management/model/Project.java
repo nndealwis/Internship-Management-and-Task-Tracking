@@ -1,5 +1,7 @@
 package com.nimesh.internship_management.model;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,72 +22,19 @@ public class Project {
     @Id
     private String id;
 
+    @NotBlank(message = "Title is required")
     private String title;
 
     private String description;
 
+    @NotBlank(message = "Technology is required")
     private String technology;
 
+    @NotNull(message = "Deadline is required")
     private LocalDate deadline;
 
+    @NotNull(message = "Status is required")
     private ProjectStatus status;
 
     private List<String> assignedInternIds;
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public String getTechnology() {
-        return technology;
-    }
-
-    public void setTechnology(String technology) {
-        this.technology = technology;
-    }
-
-    public LocalDate getDeadline() {
-        return deadline;
-    }
-
-    public void setDeadline(LocalDate deadline) {
-        this.deadline = deadline;
-    }
-
-    public ProjectStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(ProjectStatus status) {
-        this.status = status;
-    }
-
-    public List<String> getAssignedInternIds() {
-        return assignedInternIds;
-    }
-
-    public void setAssignedInternIds(List<String> assignedInternIds) {
-        this.assignedInternIds = assignedInternIds;
-    }
-
 }
