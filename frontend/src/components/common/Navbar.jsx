@@ -1,4 +1,19 @@
+import { useAuth } from '../../context/AuthContext'
+import { useNavigate } from 'react-router-dom'
+
 function Navbar() {
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    logout()
+    navigate('/login', { replace: true })
+  }
+
+  const initials = user?.name
+    ? user.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
+    : '?'
+
   return (
     <nav className="fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 z-50">
       <h1 className="text-xl font-bold text-gray-800">InternTrack</h1>
@@ -9,8 +24,16 @@ function Navbar() {
           </svg>
           <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
         </button>
-        <div className="h-9 w-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold text-sm">
-          A
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold text-sm">
+            {initials}
+          </div>
+          <button
+            onClick={handleLogout}
+            className="text-sm font-medium text-gray-600 hover:text-red-600 transition-colors"
+          >
+            Logout
+          </button>
         </div>
       </div>
     </nav>
