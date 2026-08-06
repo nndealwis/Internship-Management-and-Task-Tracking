@@ -2,6 +2,7 @@ package com.nimesh.internship_management.controller;
 
 import com.nimesh.internship_management.model.Project;
 import com.nimesh.internship_management.service.ProjectService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,13 +28,13 @@ public class ProjectController {
     }
 
     @PostMapping
-    public Project createProject(@RequestBody Project project) {
+    public Project createProject(@Valid @RequestBody Project project) {
         return projectService.createProject(project);
     }
 
     @PutMapping("/{id}")
     public Project updateProject(@PathVariable String id,
-                                 @RequestBody Project project) {
+                                 @Valid @RequestBody Project project) {
         return projectService.updateProject(id, project);
     }
 
