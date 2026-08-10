@@ -76,7 +76,21 @@ public class JwtService {
     }
 
     private SecretKey getSigningKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
+        byte[] keyBytes;
+        try {
+            if (secretKey.contains("_") || secretKey.contains("-")) {
+                keyBytes = Decoders.BASE64URL.decode(secretKey);
+            } else {
+                keyBytes = Decoders.BASE64.decode(secretKey);
+            }
+        } catch (IllegalArgumentException e) {
+            keyBytes = secretKey.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        }
+
+        if (keyBytes.length < 32) {
+            keyBytes = java.util.Arrays.copyOf(keyBytes, 32);
+        }
+
         return Keys.hmacShaKeyFor(keyBytes);
     }
 }
