@@ -1,7 +1,7 @@
 import { useAuth } from '../../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 
-function Navbar() {
+function Navbar({ onMenuToggle }) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
 
@@ -15,28 +15,76 @@ function Navbar() {
     : '?'
 
   return (
-    <nav className="fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 z-50">
-      <h1 className="text-xl font-bold text-gray-800">InternTrack</h1>
-      <div className="flex items-center gap-4">
-        <button className="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-          </svg>
-          <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
+    <header className="h-16 fixed top-0 right-0 left-0 lg:left-[240px] bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:px-8 z-40 transition-all">
+      {/* Left: Mobile menu + Search */}
+      <div className="flex items-center gap-3 flex-1 max-w-xl">
+        <button
+          onClick={onMenuToggle}
+          className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg lg:hidden transition-colors"
+          aria-label="Toggle menu"
+        >
+          <span className="material-symbols-outlined text-[22px]">menu</span>
         </button>
-        <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold text-sm">
-            {initials}
-          </div>
-          <button
-            onClick={handleLogout}
-            className="text-sm font-medium text-gray-600 hover:text-red-600 transition-colors"
-          >
-            Logout
-          </button>
+        <div className="relative w-full hidden sm:block">
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[20px]">
+            search
+          </span>
+          <input
+            type="text"
+            placeholder="Search logs, interns, or projects..."
+            className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+          />
         </div>
       </div>
-    </nav>
+
+      {/* Right: Actions & Profile */}
+      <div className="flex items-center gap-2 lg:gap-4">
+        {/* Utility buttons */}
+        <div className="hidden sm:flex items-center gap-1 border-r border-gray-200 pr-4 mr-2">
+          <button className="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors relative">
+            <span className="material-symbols-outlined text-[20px]">
+              notifications
+            </span>
+            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
+          </button>
+          <button className="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors">
+            <span className="material-symbols-outlined text-[20px]">help</span>
+          </button>
+          <button className="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors">
+            <span className="material-symbols-outlined text-[20px]">
+              settings
+            </span>
+          </button>
+        </div>
+
+        {/* User Profile */}
+        <button className="flex items-center gap-2 lg:gap-3 hover:bg-gray-50 p-1.5 rounded-lg transition-colors">
+          <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
+            {initials}
+          </div>
+          <div className="text-left hidden lg:block">
+            <p className="text-sm font-semibold text-gray-900 leading-tight">
+              {user?.name || 'User'}
+            </p>
+            <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">
+              {user?.role || 'Role'}
+            </p>
+          </div>
+          <span className="material-symbols-outlined text-gray-400 text-[18px] hidden lg:block">
+            expand_more
+          </span>
+        </button>
+
+        {/* Logout */}
+        <button
+          onClick={handleLogout}
+          className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors lg:hidden"
+          title="Logout"
+        >
+          <span className="material-symbols-outlined text-[20px]">logout</span>
+        </button>
+      </div>
+    </header>
   )
 }
 

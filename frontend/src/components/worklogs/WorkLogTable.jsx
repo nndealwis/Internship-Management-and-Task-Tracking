@@ -1,58 +1,79 @@
-function WorkLogTable({ workLogs, users, onEdit, onDelete }) {
-  const getInternName = (internId) => {
-    const user = users.find((u) => u.id === internId)
-    return user?.name || '-'
-  }
+function getInitials(name) {
+  if (!name) return '?'
+  return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
+}
 
+function WorkLogTable({ workLogs, userMap, onEdit, onDelete }) {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <div className="bg-white border border-gray-200/50 rounded-xl shadow-sm overflow-hidden flex flex-col">
       <div className="overflow-x-auto">
-        <table className="w-full">
+        <table className="w-full text-left min-w-[1000px]">
           <thead>
-            <tr className="text-left text-sm text-gray-500 bg-gray-50 border-b border-gray-200">
-              <th className="px-6 py-3 font-medium">Intern</th>
-              <th className="px-6 py-3 font-medium">Date</th>
-              <th className="px-6 py-3 font-medium">Hours</th>
-              <th className="px-6 py-3 font-medium">Completed Work</th>
-              <th className="px-6 py-3 font-medium">Current Work</th>
-              <th className="px-6 py-3 font-medium">Challenges</th>
-              <th className="px-6 py-3 font-medium">Next Day Plan</th>
-              <th className="px-6 py-3 font-medium text-right">Actions</th>
+            <tr className="bg-gray-50 border-b border-gray-200/50">
+              <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Intern</th>
+              <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Date</th>
+              <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Hours</th>
+              <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Completed Work</th>
+              <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Current Work</th>
+              <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Challenges</th>
+              <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Next Day Plan</th>
+              <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-right">Actions</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-gray-100">
             {workLogs.length === 0 ? (
               <tr>
-                <td colSpan="8" className="px-6 py-12 text-center text-gray-500">
-                  No work logs found.
+                <td colSpan={8} className="px-6 py-12 text-center">
+                  <span className="material-symbols-outlined text-4xl text-gray-300 mb-2 block">history</span>
+                  <p className="text-sm text-gray-400">No work logs found</p>
                 </td>
               </tr>
             ) : (
-              workLogs.map((log) => (
-                <tr key={log.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50">
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900">{getInternName(log.internId)}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{log.date}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{log.hoursWorked}h</td>
-                  <td className="px-6 py-4 text-sm text-gray-600 max-w-[200px] truncate" title={log.completedWork}>{log.completedWork}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600 max-w-[200px] truncate" title={log.currentWork}>{log.currentWork}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600 max-w-[200px] truncate" title={log.challenges}>{log.challenges}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600 max-w-[200px] truncate" title={log.nextDayPlan}>{log.nextDayPlan}</td>
-                  <td className="px-6 py-4 text-right">
-                    <button
-                      onClick={() => onEdit(log)}
-                      className="text-blue-600 hover:text-blue-800 font-medium text-sm mr-3"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => onDelete(log)}
-                      className="text-red-600 hover:text-red-800 font-medium text-sm"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))
+              workLogs.map((log) => {
+                const intern = userMap?.[log.internId]
+                return (
+                  <tr key={log.id} className="hover:bg-gray-50/50 transition-colors group">
+                    <td className="px-6 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center flex-shrink-0">
+                          <span className="text-[10px] font-medium text-gray-600">{getInitials(intern?.name)}</span>
+                        </div>
+                        <span className="text-sm font-medium text-gray-900 whitespace-nowrap">{intern?.name || '-'}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-3">
+                      <span className="text-sm text-gray-500 whitespace-nowrap">{log.date}</span>
+                    </td>
+                    <td className="px-6 py-3">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-gray-100 text-gray-600">
+                        {log.hoursWorked} hrs
+                      </span>
+                    </td>
+                    <td className="px-6 py-3">
+                      <p className="text-sm text-gray-700 line-clamp-2" title={log.completedWork}>{log.completedWork || '-'}</p>
+                    </td>
+                    <td className="px-6 py-3">
+                      <p className="text-sm text-gray-500 line-clamp-2" title={log.currentWork}>{log.currentWork || '--'}</p>
+                    </td>
+                    <td className="px-6 py-3">
+                      <p className="text-sm text-gray-500 line-clamp-2" title={log.challenges}>{log.challenges || '--'}</p>
+                    </td>
+                    <td className="px-6 py-3">
+                      <p className="text-sm text-gray-500 line-clamp-2" title={log.nextDayPlan}>{log.nextDayPlan || '--'}</p>
+                    </td>
+                    <td className="px-6 py-3 text-right">
+                      <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => onEdit(log)} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit log">
+                          <span className="material-symbols-outlined text-[20px]">edit</span>
+                        </button>
+                        <button onClick={() => onDelete(log)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete log">
+                          <span className="material-symbols-outlined text-[20px]">delete</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })
             )}
           </tbody>
         </table>

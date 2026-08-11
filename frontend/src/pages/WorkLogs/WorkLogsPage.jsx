@@ -18,6 +18,14 @@ function WorkLogsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
+  const userMap = useMemo(() => {
+    const map = {}
+    users.forEach((u) => { map[u.id] = u })
+    return map
+  }, [users])
+
+  const interns = useMemo(() => users.filter((u) => u.role === 'INTERN'), [users])
+
   const fetchData = async () => {
     try {
       setLoading(true)
@@ -44,7 +52,8 @@ function WorkLogsPage() {
     return workLogs.filter((log) => {
       const matchesSearch =
         log.completedWork?.toLowerCase().includes(query) ||
-        log.currentWork?.toLowerCase().includes(query)
+        log.currentWork?.toLowerCase().includes(query) ||
+        log.challenges?.toLowerCase().includes(query)
       const matchesIntern = !filterIntern || log.internId === filterIntern
       const matchesDate = !filterDate || log.date === filterDate
       return matchesSearch && matchesIntern && matchesDate
@@ -77,7 +86,7 @@ function WorkLogsPage() {
       setSelectedLog(null)
       await fetchData()
     } catch (err) {
-      setError('Operation failed. Please try again.')
+      throw err
     }
   }
 
@@ -92,73 +101,106 @@ function WorkLogsPage() {
     }
   }
 
-  const interns = users.filter((u) => u.role === 'INTERN')
-
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Work Logs</h2>
-          <p className="text-sm text-gray-500">Manage daily internship work logs</p>
+          <h2 className="text-3xl font-semibold text-gray-900 tracking-tight">
+            Work Logs
+          </h2>
+          <p className="text-sm text-gray-500 mt-1">
+            Track daily internship progress and activities
+          </p>
         </div>
         <button
           onClick={handleCreate}
-          className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-sm"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-          </svg>
+          <span className="material-symbols-outlined text-[18px]">add</span>
           Add Work Log
         </button>
       </div>
 
-      <div className="mb-6 space-y-4">
-        <div className="relative max-w-md">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
+      <div className="bg-white border border-gray-200/50 rounded-xl p-4 flex flex-col lg:flex-row gap-4 items-center justify-between shadow-sm">
+        <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+          <div className="relative min-w-[200px]">
+            <select
+              value={filterIntern}
+              onChange={(e) => setFilterIntern(e.target.value)}
+              className="w-full appearance-none bg-gray-50 border border-gray-200 rounded-lg py-2 pl-3 pr-10 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">All Interns</option>
+              {interns.map((intern) => (
+                <option key={intern.id} value={intern.id}>
+                  {intern.name}
+                </option>
+              ))}
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+              <span className="material-symbols-outlined text-[18px]">expand_more</span>
+            </div>
+          </div>
+          <div className="relative min-w-[200px]">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[16px]">
+              calendar_today
+            </span>
+            <input
+              type="date"
+              value={filterDate}
+              onChange={(e) => setFilterDate(e.target.value)}
+              className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2 pl-9 pr-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+        <div className="relative w-full lg:w-[300px]">
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[16px]">
+            search
+          </span>
           <input
             type="text"
-            placeholder="Search by completed or current work..."
+            placeholder="Search work logs..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-        </div>
-        <div className="flex flex-wrap gap-3">
-          <select
-            value={filterIntern}
-            onChange={(e) => setFilterIntern(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="">All Interns</option>
-            {interns.map((intern) => (
-              <option key={intern.id} value={intern.id}>{intern.name}</option>
-            ))}
-          </select>
-          <input
-            type="date"
-            value={filterDate}
-            onChange={(e) => setFilterDate(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2 pl-9 pr-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
       </div>
 
       {error && (
-        <div className="mb-6 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-          {error}
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3">
+          <span className="material-symbols-outlined text-red-500 text-[20px]">
+            error
+          </span>
+          <p className="text-sm text-red-600 flex-1">{error}</p>
+          <button
+            onClick={() => setError(null)}
+            className="text-red-400 hover:text-red-600"
+          >
+            <span className="material-symbols-outlined text-[18px]">close</span>
+          </button>
         </div>
       )}
 
       {loading ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center text-gray-500">
-          Loading work logs...
+        <div className="bg-white rounded-xl border border-gray-200/50 shadow-sm">
+          <div className="p-6 space-y-4">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="flex items-center gap-4">
+                <div className="h-8 w-8 bg-gray-200 rounded-full animate-pulse" />
+                <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+                <div className="h-4 w-20 bg-gray-100 rounded animate-pulse" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-3 w-full bg-gray-100 rounded animate-pulse" />
+                  <div className="h-3 w-3/4 bg-gray-50 rounded animate-pulse" />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       ) : (
         <WorkLogTable
           workLogs={filteredLogs}
-          users={users}
+          userMap={userMap}
           onEdit={handleEdit}
           onDelete={handleDelete}
         />
