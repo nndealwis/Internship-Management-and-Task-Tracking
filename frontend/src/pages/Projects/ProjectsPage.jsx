@@ -1,12 +1,21 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { getProjects, createProject, updateProject, deleteProject } from '../../services/projectService'
+import { getTasks } from '../../services/taskService'
 import { getUsers } from '../../services/userService'
+import { useAuth } from '../../context/AuthContext'
+import { useToast } from '../../components/common/Toast'
 import ProjectTable from '../../components/projects/ProjectTable'
 import ProjectFormModal from '../../components/projects/ProjectFormModal'
 import DeleteDialog from '../../components/common/DeleteDialog'
 
 function ProjectsPage() {
+  const { user } = useAuth()
+  const { addToast } = useToast()
+  const isAdmin = user?.role === 'ADMIN'
+  const navigate = useNavigate()
   const [projects, setProjects] = useState([])
+  const [tasks, setTasks] = useState([])
   const [users, setUsers] = useState([])
   const [search, setSearch] = useState('')
   const [isFormOpen, setIsFormOpen] = useState(false)
@@ -22,12 +31,24 @@ function ProjectsPage() {
     return map
   }, [users])
 
+  const taskCountMap = useMemo(() => {
+    const map = {}
+    tasks.forEach((t) => {
+      map[t.projectId] = (map[t.projectId] || 0) + 1
+    })
+    return map
+  }, [tasks])
+
   const fetchProjects = async () => {
     try {
       setLoading(true)
       setError(null)
-      const response = await getProjects()
-      setProjects(response.data)
+      const [projectsRes, tasksRes] = await Promise.all([
+        getProjects(),
+        getTasks(),
+      ])
+      setProjects(projectsRes.data)
+      setTasks(tasksRes.data)
     } catch (err) {
       setError('Failed to load projects. Please try again.')
     } finally {
@@ -38,15 +59,17 @@ function ProjectsPage() {
   useEffect(() => {
     const init = async () => {
       await fetchProjects()
-      try {
-        const res = await getUsers()
-        setUsers(res.data)
-      } catch {
-        // ignore - intern resolution will show IDs instead
+      if (isAdmin) {
+        try {
+          const res = await getUsers()
+          setUsers(res.data)
+        } catch {
+          // ignore
+        }
       }
     }
     init()
-  }, [])
+  }, [isAdmin])
 
   const filteredProjects = useMemo(() => {
     const query = search.toLowerCase()
@@ -72,12 +95,22 @@ function ProjectsPage() {
     setIsDeleteOpen(true)
   }
 
+  const handleViewDetails = (project) => {
+    navigate(`/projects/${project.id}`)
+  }
+
+  const handleManageTasks = (project) => {
+    navigate(`/projects/${project.id}`)
+  }
+
   const handleFormSubmit = async (formData) => {
     try {
       if (selectedProject) {
         await updateProject(selectedProject.id, formData)
+        addToast('Project updated successfully')
       } else {
         await createProject(formData)
+        addToast('Project created successfully')
       }
       setIsFormOpen(false)
       setSelectedProject(null)
@@ -93,6 +126,7 @@ function ProjectsPage() {
       setIsDeleteOpen(false)
       setProjectToDelete(null)
       await fetchProjects()
+      addToast('Project deleted successfully')
     } catch (err) {
       setError('Failed to delete project. Please try again.')
     }
@@ -106,7 +140,7 @@ function ProjectsPage() {
             Projects
           </h2>
           <p className="text-sm text-gray-500 mt-1">
-            Manage internship projects and assigned interns
+            {isAdmin ? 'Manage internship projects and assigned interns' : 'View your assigned projects'}
           </p>
         </div>
         <div className="flex gap-3">
@@ -122,13 +156,15 @@ function ProjectsPage() {
               className="pl-9 pr-4 py-2 bg-white rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm w-64 transition-all"
             />
           </div>
-          <button
-            onClick={handleCreate}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-sm"
-          >
-            <span className="material-symbols-outlined text-[18px]">add</span>
-            Add Project
-          </button>
+          {isAdmin && (
+            <button
+              onClick={handleCreate}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-sm"
+            >
+              <span className="material-symbols-outlined text-[18px]">add</span>
+              Add Project
+            </button>
+          )}
         </div>
       </div>
 
@@ -165,24 +201,32 @@ function ProjectsPage() {
         <ProjectTable
           projects={filteredProjects}
           userMap={userMap}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
+          taskCountMap={taskCountMap}
+          onEdit={isAdmin ? handleEdit : undefined}
+          onDelete={isAdmin ? handleDelete : undefined}
+          onViewDetails={handleViewDetails}
+          onManageTasks={isAdmin ? handleManageTasks : undefined}
+          isAdmin={isAdmin}
         />
       )}
 
-      <ProjectFormModal
-        isOpen={isFormOpen}
-        onClose={() => { setIsFormOpen(false); setSelectedProject(null) }}
-        onSubmit={handleFormSubmit}
-        project={selectedProject}
-      />
+      {isAdmin && (
+        <>
+          <ProjectFormModal
+            isOpen={isFormOpen}
+            onClose={() => { setIsFormOpen(false); setSelectedProject(null) }}
+            onSubmit={handleFormSubmit}
+            project={selectedProject}
+          />
 
-      <DeleteDialog
-        isOpen={isDeleteOpen}
-        onClose={() => { setIsDeleteOpen(false); setProjectToDelete(null) }}
-        onConfirm={handleConfirmDelete}
-        itemName={projectToDelete?.title}
-      />
+          <DeleteDialog
+            isOpen={isDeleteOpen}
+            onClose={() => { setIsDeleteOpen(false); setProjectToDelete(null) }}
+            onConfirm={handleConfirmDelete}
+            itemName={projectToDelete?.title}
+          />
+        </>
+      )}
     </div>
   )
 }

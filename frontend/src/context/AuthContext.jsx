@@ -28,6 +28,7 @@ function AuthProvider({ children }) {
       name: data.name,
       email: data.email,
       role: data.role,
+      profileImageUrl: data.profileImageUrl,
     }))
 
     setToken(data.token)
@@ -36,6 +37,7 @@ function AuthProvider({ children }) {
       name: data.name,
       email: data.email,
       role: data.role,
+      profileImageUrl: data.profileImageUrl,
     })
 
     return data

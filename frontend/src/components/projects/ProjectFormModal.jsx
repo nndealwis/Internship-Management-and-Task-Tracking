@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import Modal from '../common/Modal'
+import UserAvatar from '../common/UserAvatar'
 import { getUsers } from '../../services/userService'
 
 const initialForm = {
@@ -9,11 +10,6 @@ const initialForm = {
   deadline: '',
   status: 'PLANNED',
   assignedInternIds: [],
-}
-
-function getInitials(name) {
-  if (!name) return '?'
-  return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
 }
 
 function ProjectFormModal({ isOpen, onClose, onSubmit, project }) {
@@ -27,7 +23,7 @@ function ProjectFormModal({ isOpen, onClose, onSubmit, project }) {
   useEffect(() => {
     if (isOpen) {
       getUsers()
-        .then((res) => setUsers(res.data))
+        .then((res) => setUsers(res.data.filter((u) => u.role === 'INTERN')))
         .catch(() => setUsers([]))
     }
   }, [isOpen])
@@ -157,9 +153,7 @@ function ProjectFormModal({ isOpen, onClose, onSubmit, project }) {
                     <input type="checkbox" checked={checked}
                       onChange={() => handleInternToggle(user.id)}
                       className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-                    <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                      <span className="text-[10px] font-medium text-gray-600">{getInitials(user.name)}</span>
-                    </div>
+                    <UserAvatar user={user} size="w-7 h-7" textSize="text-[10px]" />
                     <div className="flex-1 min-w-0">
                       <span className="text-sm text-gray-700 block truncate">{user.name}</span>
                       <span className="text-xs text-gray-400 block truncate">{user.email}</span>

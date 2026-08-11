@@ -1,12 +1,5 @@
-function getInitials(name) {
-  if (!name) return '?'
-  return name
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
-}
+import { Link } from 'react-router-dom'
+import UserAvatar from '../common/UserAvatar'
 
 const statusConfig = {
   IN_PROGRESS: {
@@ -26,7 +19,7 @@ const statusConfig = {
   },
 }
 
-function ProjectTable({ projects, userMap, onEdit, onDelete }) {
+function ProjectTable({ projects, userMap, taskCountMap, onEdit, onDelete, onViewDetails, onManageTasks, isAdmin }) {
   return (
     <div className="bg-white border border-gray-200/50 rounded-xl shadow-sm overflow-hidden flex flex-col">
       <div className="overflow-x-auto">
@@ -46,7 +39,10 @@ function ProjectTable({ projects, userMap, onEdit, onDelete }) {
                 Status
               </th>
               <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Assigned Interns
+                Interns
+              </th>
+              <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Tasks
               </th>
               <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-right">
                 Actions
@@ -56,7 +52,7 @@ function ProjectTable({ projects, userMap, onEdit, onDelete }) {
           <tbody className="divide-y divide-gray-100">
             {projects.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-6 py-12 text-center">
+                <td colSpan={7} className="px-6 py-12 text-center">
                   <span className="material-symbols-outlined text-4xl text-gray-300 mb-2 block">
                     folder
                   </span>
@@ -69,6 +65,7 @@ function ProjectTable({ projects, userMap, onEdit, onDelete }) {
                 const internIds = project.assignedInternIds || []
                 const displayInterns = internIds.slice(0, 2)
                 const overflow = internIds.length - 2
+                const taskCount = taskCountMap?.[project.id] || 0
 
                 return (
                   <tr
@@ -119,16 +116,9 @@ function ProjectTable({ projects, userMap, onEdit, onDelete }) {
                         <div className="flex -space-x-2">
                           {displayInterns.map((id) => {
                             const user = userMap?.[id]
-                            const initials = getInitials(user?.name)
                             return (
-                              <div
-                                key={id}
-                                className="w-8 h-8 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center flex-shrink-0"
-                                title={user?.name || id}
-                              >
-                                <span className="text-[10px] font-medium text-gray-600">
-                                  {initials}
-                                </span>
+                              <div key={id} title={user?.name || id}>
+                                <UserAvatar user={user} size="w-8 h-8" textSize="text-[10px]" />
                               </div>
                             )
                           })}
@@ -142,26 +132,56 @@ function ProjectTable({ projects, userMap, onEdit, onDelete }) {
                         </div>
                       )}
                     </td>
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center gap-1 text-sm text-gray-600">
+                        <span className="material-symbols-outlined text-[16px] text-gray-400">
+                          assignment
+                        </span>
+                        {taskCount}
+                      </span>
+                    </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex justify-end gap-1">
                         <button
-                          onClick={() => onEdit(project)}
+                          onClick={() => onViewDetails(project)}
                           className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="Edit project"
+                          title="View project details"
                         >
                           <span className="material-symbols-outlined text-[20px]">
-                            edit
+                            visibility
                           </span>
                         </button>
-                        <button
-                          onClick={() => onDelete(project)}
-                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Delete project"
-                        >
-                          <span className="material-symbols-outlined text-[20px]">
-                            delete
-                          </span>
-                        </button>
+                        {isAdmin && (
+                          <>
+                            <button
+                              onClick={() => onManageTasks(project)}
+                              className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                              title="Manage tasks"
+                            >
+                              <span className="material-symbols-outlined text-[20px]">
+                                task_alt
+                              </span>
+                            </button>
+                            <button
+                              onClick={() => onEdit(project)}
+                              className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                              title="Edit project"
+                            >
+                              <span className="material-symbols-outlined text-[20px]">
+                                edit
+                              </span>
+                            </button>
+                            <button
+                              onClick={() => onDelete(project)}
+                              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Delete project"
+                            >
+                              <span className="material-symbols-outlined text-[20px]">
+                                delete
+                              </span>
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>

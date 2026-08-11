@@ -13,7 +13,7 @@ const initialForm = {
   status: 'TODO',
 }
 
-function TaskFormModal({ isOpen, onClose, onSubmit, task }) {
+function TaskFormModal({ isOpen, onClose, onSubmit, task, defaultProjectId, projectInterns }) {
   const [form, setForm] = useState(initialForm)
   const [projects, setProjects] = useState([])
   const [interns, setInterns] = useState([])
@@ -21,20 +21,26 @@ function TaskFormModal({ isOpen, onClose, onSubmit, task }) {
   const [serverError, setServerError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const isEditing = !!task
+  const isProjectContext = !!defaultProjectId
 
   useEffect(() => {
     if (isOpen) {
-      Promise.all([getProjects(), getUsers()])
-        .then(([projRes, userRes]) => {
-          setProjects(projRes.data)
-          setInterns(userRes.data.filter((u) => u.role === 'INTERN'))
-        })
-        .catch(() => {
-          setProjects([])
-          setInterns([])
-        })
+      if (isProjectContext && projectInterns) {
+        setInterns(projectInterns)
+        setProjects([])
+      } else {
+        Promise.all([getProjects(), getUsers()])
+          .then(([projRes, userRes]) => {
+            setProjects(projRes.data)
+            setInterns(userRes.data.filter((u) => u.role === 'INTERN'))
+          })
+          .catch(() => {
+            setProjects([])
+            setInterns([])
+          })
+      }
     }
-  }, [isOpen])
+  }, [isOpen, isProjectContext, projectInterns])
 
   useEffect(() => {
     if (task) {
@@ -47,12 +53,17 @@ function TaskFormModal({ isOpen, onClose, onSubmit, task }) {
         deadline: task.deadline || '',
         status: task.status || 'TODO',
       })
+    } else if (isProjectContext) {
+      setForm({
+        ...initialForm,
+        projectId: defaultProjectId,
+      })
     } else {
       setForm(initialForm)
     }
     setErrors({})
     setServerError('')
-  }, [task, isOpen])
+  }, [task, isOpen, isProjectContext, defaultProjectId])
 
   const validate = () => {
     const newErrors = {}
@@ -123,12 +134,18 @@ function TaskFormModal({ isOpen, onClose, onSubmit, task }) {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Project</label>
-            <select name="projectId" value={form.projectId} onChange={handleChange} className={inputClass('projectId')}>
-              <option value="">Select project</option>
-              {projects.map((project) => (
-                <option key={project.id} value={project.id}>{project.title}</option>
-              ))}
-            </select>
+            {isProjectContext ? (
+              <div className="w-full px-3 py-2 border border-gray-200 bg-gray-50 rounded-lg text-sm text-gray-700">
+                {projects.length > 0 ? projects.find(p => p.id === form.projectId)?.title || form.projectId : form.projectId}
+              </div>
+            ) : (
+              <select name="projectId" value={form.projectId} onChange={handleChange} className={inputClass('projectId')}>
+                <option value="">Select project</option>
+                {projects.map((project) => (
+                  <option key={project.id} value={project.id}>{project.title}</option>
+                ))}
+              </select>
+            )}
             {errors.projectId && <p className="mt-1 text-xs text-red-500">{errors.projectId}</p>}
           </div>
           <div>
@@ -165,8 +182,6 @@ function TaskFormModal({ isOpen, onClose, onSubmit, task }) {
           <select name="status" value={form.status} onChange={handleChange} className={inputClass('status')}>
             <option value="TODO">To Do</option>
             <option value="IN_PROGRESS">In Progress</option>
-            <option value="SUBMITTED">Submitted</option>
-            <option value="REVISION_REQUIRED">Revision Required</option>
             <option value="COMPLETED">Completed</option>
           </select>
           {errors.status && <p className="mt-1 text-xs text-red-500">{errors.status}</p>}

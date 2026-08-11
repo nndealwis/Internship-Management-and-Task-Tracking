@@ -1,12 +1,4 @@
-function getInitials(name) {
-  if (!name) return '?'
-  return name
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
-}
+import UserAvatar from '../common/UserAvatar'
 
 function UserTable({ users, onEdit, onDelete }) {
   return (
@@ -50,11 +42,7 @@ function UserTable({ users, onEdit, onDelete }) {
                 >
                   <td className="py-3 px-6">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center flex-shrink-0">
-                        <span className="text-sm font-medium text-gray-600">
-                          {getInitials(user.name)}
-                        </span>
-                      </div>
+                      <UserAvatar user={user} />
                       <span className="text-sm font-medium text-gray-900">
                         {user.name}
                       </span>

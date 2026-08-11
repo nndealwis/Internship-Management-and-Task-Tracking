@@ -2,11 +2,16 @@ import { useState, useEffect, useMemo } from 'react'
 import { getTasks, createTask, updateTask, deleteTask } from '../../services/taskService'
 import { getProjects } from '../../services/projectService'
 import { getUsers } from '../../services/userService'
+import { useAuth } from '../../context/AuthContext'
+import { useToast } from '../../components/common/Toast'
 import TaskTable from '../../components/tasks/TaskTable'
 import TaskFormModal from '../../components/tasks/TaskFormModal'
 import DeleteDialog from '../../components/common/DeleteDialog'
 
 function TasksPage() {
+  const { user } = useAuth()
+  const { addToast } = useToast()
+  const isAdmin = user?.role === 'ADMIN'
   const [tasks, setTasks] = useState([])
   const [projects, setProjects] = useState([])
   const [users, setUsers] = useState([])
@@ -37,14 +42,20 @@ function TasksPage() {
     try {
       setLoading(true)
       setError(null)
-      const [tasksRes, projectsRes, usersRes] = await Promise.all([
+      const [tasksRes, projectsRes] = await Promise.all([
         getTasks(),
         getProjects(),
-        getUsers(),
       ])
       setTasks(tasksRes.data)
       setProjects(projectsRes.data)
-      setUsers(usersRes.data)
+      if (isAdmin) {
+        try {
+          const usersRes = await getUsers()
+          setUsers(usersRes.data)
+        } catch {
+          // ignore
+        }
+      }
     } catch (err) {
       setError('Failed to load tasks. Please try again.')
     } finally {
@@ -54,7 +65,7 @@ function TasksPage() {
 
   useEffect(() => {
     fetchData()
-  }, [])
+  }, [isAdmin])
 
   const filteredTasks = useMemo(() => {
     const query = search.toLowerCase()
@@ -84,12 +95,24 @@ function TasksPage() {
     setIsDeleteOpen(true)
   }
 
+  const handleStatusUpdate = async (task, newStatus) => {
+    try {
+      await updateTask(task.id, { ...task, status: newStatus })
+      await fetchData()
+      addToast('Task status updated')
+    } catch (err) {
+      setError('Failed to update task status.')
+    }
+  }
+
   const handleFormSubmit = async (formData) => {
     try {
       if (selectedTask) {
         await updateTask(selectedTask.id, formData)
+        addToast('Task updated successfully')
       } else {
         await createTask(formData)
+        addToast('Task created successfully')
       }
       setIsFormOpen(false)
       setSelectedTask(null)
@@ -105,6 +128,7 @@ function TasksPage() {
       setIsDeleteOpen(false)
       setTaskToDelete(null)
       await fetchData()
+      addToast('Task deleted successfully')
     } catch (err) {
       setError('Failed to delete task. Please try again.')
     }
@@ -117,7 +141,7 @@ function TasksPage() {
           Tasks
         </h2>
         <p className="text-sm text-gray-500 mt-1">
-          Track internship tasks, progress, deadlines, and submissions
+          {isAdmin ? 'Track internship tasks, progress, deadlines, and submissions' : 'View and update your assigned tasks'}
         </p>
       </div>
 
@@ -155,8 +179,6 @@ function TasksPage() {
             <option value="">All Statuses</option>
             <option value="TODO">To Do</option>
             <option value="IN_PROGRESS">In Progress</option>
-            <option value="SUBMITTED">Submitted</option>
-            <option value="REVISION_REQUIRED">Revision Required</option>
             <option value="COMPLETED">Completed</option>
           </select>
           <select
@@ -169,13 +191,15 @@ function TasksPage() {
             <option value="MEDIUM">Medium</option>
             <option value="LOW">Low</option>
           </select>
-          <button
-            onClick={handleCreate}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 whitespace-nowrap"
-          >
-            <span className="material-symbols-outlined text-[18px]">add</span>
-            Add Task
-          </button>
+          {isAdmin && (
+            <button
+              onClick={handleCreate}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 whitespace-nowrap"
+            >
+              <span className="material-symbols-outlined text-[18px]">add</span>
+              Add Task
+            </button>
+          )}
         </div>
       </div>
 
@@ -213,24 +237,30 @@ function TasksPage() {
           tasks={filteredTasks}
           projectMap={projectMap}
           userMap={userMap}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
+          onEdit={isAdmin ? handleEdit : undefined}
+          onDelete={isAdmin ? handleDelete : undefined}
+          onStatusUpdate={!isAdmin ? handleStatusUpdate : undefined}
+          isAdmin={isAdmin}
         />
       )}
 
-      <TaskFormModal
-        isOpen={isFormOpen}
-        onClose={() => { setIsFormOpen(false); setSelectedTask(null) }}
-        onSubmit={handleFormSubmit}
-        task={selectedTask}
-      />
+      {isAdmin && (
+        <>
+          <TaskFormModal
+            isOpen={isFormOpen}
+            onClose={() => { setIsFormOpen(false); setSelectedTask(null) }}
+            onSubmit={handleFormSubmit}
+            task={selectedTask}
+          />
 
-      <DeleteDialog
-        isOpen={isDeleteOpen}
-        onClose={() => { setIsDeleteOpen(false); setTaskToDelete(null) }}
-        onConfirm={handleConfirmDelete}
-        itemName={taskToDelete?.title}
-      />
+          <DeleteDialog
+            isOpen={isDeleteOpen}
+            onClose={() => { setIsDeleteOpen(false); setTaskToDelete(null) }}
+            onConfirm={handleConfirmDelete}
+            itemName={taskToDelete?.title}
+          />
+        </>
+      )}
     </div>
   )
 }

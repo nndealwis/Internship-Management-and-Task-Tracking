@@ -12,12 +12,7 @@ const initialForm = {
   nextDayPlan: '',
 }
 
-function getInitials(name) {
-  if (!name) return '?'
-  return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
-}
-
-function WorkLogFormModal({ isOpen, onClose, onSubmit, workLog }) {
+function WorkLogFormModal({ isOpen, onClose, onSubmit, workLog, isAdmin, currentUser }) {
   const [form, setForm] = useState(initialForm)
   const [interns, setInterns] = useState([])
   const [errors, setErrors] = useState({})
@@ -26,14 +21,14 @@ function WorkLogFormModal({ isOpen, onClose, onSubmit, workLog }) {
   const isEditing = !!workLog
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && isAdmin) {
       getUsers()
         .then((res) => {
           setInterns(res.data.filter((u) => u.role === 'INTERN'))
         })
         .catch(() => setInterns([]))
     }
-  }, [isOpen])
+  }, [isOpen, isAdmin])
 
   useEffect(() => {
     if (workLog) {
@@ -47,15 +42,22 @@ function WorkLogFormModal({ isOpen, onClose, onSubmit, workLog }) {
         nextDayPlan: workLog.nextDayPlan || '',
       })
     } else {
-      setForm(initialForm)
+      setForm({
+        ...initialForm,
+        internId: isAdmin ? '' : currentUser?.userId || '',
+      })
     }
     setErrors({})
     setServerError('')
-  }, [workLog, isOpen])
+  }, [workLog, isOpen, isAdmin, currentUser])
 
   const validate = () => {
     const newErrors = {}
-    if (!form.internId) newErrors.internId = 'Intern is required'
+    if (!isAdmin && !form.internId) {
+      // internId will be set automatically
+    } else if (isAdmin && !form.internId) {
+      newErrors.internId = 'Intern is required'
+    }
     if (!form.date) newErrors.date = 'Date is required'
     if (!form.completedWork.trim()) newErrors.completedWork = 'Completed work is required'
     if (!form.hoursWorked && form.hoursWorked !== 0) {
@@ -79,7 +81,11 @@ function WorkLogFormModal({ isOpen, onClose, onSubmit, workLog }) {
     if (!validate()) return
     try {
       setSubmitting(true)
-      await onSubmit(form)
+      const payload = { ...form }
+      if (!isAdmin) {
+        payload.internId = currentUser?.userId
+      }
+      await onSubmit(payload)
     } catch (err) {
       const message = err.response?.data?.message || 'Operation failed. Please try again.'
       setServerError(message)
@@ -102,23 +108,33 @@ function WorkLogFormModal({ isOpen, onClose, onSubmit, workLog }) {
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Intern</label>
-            <select name="internId" value={form.internId} onChange={handleChange} className={inputClass('internId')}>
-              <option value="">Select intern</option>
-              {interns.map((intern) => (
-                <option key={intern.id} value={intern.id}>{intern.name}</option>
-              ))}
-            </select>
-            {errors.internId && <p className="mt-1 text-xs text-red-500">{errors.internId}</p>}
+        {isAdmin && (
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Intern</label>
+              <select name="internId" value={form.internId} onChange={handleChange} className={inputClass('internId')}>
+                <option value="">Select intern</option>
+                {interns.map((intern) => (
+                  <option key={intern.id} value={intern.id}>{intern.name}</option>
+                ))}
+              </select>
+              {errors.internId && <p className="mt-1 text-xs text-red-500">{errors.internId}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Date</label>
+              <input type="date" name="date" value={form.date} onChange={handleChange} className={inputClass('date')} />
+              {errors.date && <p className="mt-1 text-xs text-red-500">{errors.date}</p>}
+            </div>
           </div>
+        )}
+
+        {!isAdmin && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Date</label>
             <input type="date" name="date" value={form.date} onChange={handleChange} className={inputClass('date')} />
             {errors.date && <p className="mt-1 text-xs text-red-500">{errors.date}</p>}
           </div>
-        </div>
+        )}
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1.5">Completed Work</label>
