@@ -5,6 +5,7 @@ import { getUsers } from '../../services/userService'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../components/common/Toast'
 import TaskTable from '../../components/tasks/TaskTable'
+import TaskKanban from '../../components/tasks/TaskKanban'
 import TaskFormModal from '../../components/tasks/TaskFormModal'
 import DeleteDialog from '../../components/common/DeleteDialog'
 
@@ -19,6 +20,7 @@ function TasksPage() {
   const [filterProject, setFilterProject] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
   const [filterPriority, setFilterPriority] = useState('')
+  const [viewMode, setViewMode] = useState('board') // 'board' or 'table'
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [selectedTask, setSelectedTask] = useState(null)
@@ -191,6 +193,32 @@ function TasksPage() {
             <option value="MEDIUM">Medium</option>
             <option value="LOW">Low</option>
           </select>
+          <div className="flex items-center gap-2 border-l border-gray-200 pl-3">
+            <button
+              onClick={() => setViewMode('board')}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                viewMode === 'board' 
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+              }`}
+              title="Board View"
+            >
+              <span className="material-symbols-outlined text-[18px]">view_kanban</span>
+              Board
+            </button>
+            <button
+              onClick={() => setViewMode('table')}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                viewMode === 'table' 
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+              }`}
+              title="Table View"
+            >
+              <span className="material-symbols-outlined text-[18px]">table_rows</span>
+              Table
+            </button>
+          </div>
           {isAdmin && (
             <button
               onClick={handleCreate}
@@ -231,6 +259,18 @@ function TasksPage() {
               </div>
             ))}
           </div>
+        </div>
+      ) : viewMode === 'board' ? (
+        <div className="h-[calc(100vh-280px)] min-h-[500px]">
+          <TaskKanban
+            tasks={filteredTasks}
+            projectMap={projectMap}
+            userMap={userMap}
+            onEdit={isAdmin ? handleEdit : undefined}
+            onDelete={isAdmin ? handleDelete : undefined}
+            onStatusUpdate={handleStatusUpdate}
+            isAdmin={isAdmin}
+          />
         </div>
       ) : (
         <TaskTable
