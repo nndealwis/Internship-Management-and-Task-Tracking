@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Modal from '../common/Modal'
 
 const initialForm = {
@@ -9,11 +9,18 @@ const initialForm = {
   active: true,
 }
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+
 function UserFormModal({ isOpen, onClose, onSubmit, user }) {
   const [form, setForm] = useState(initialForm)
   const [errors, setErrors] = useState({})
   const [serverError, setServerError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [photoFile, setPhotoFile] = useState(null)
+  const [photoPreview, setPhotoPreview] = useState(null)
+  const [photoError, setPhotoError] = useState('')
+  const fileInputRef = useRef(null)
   const isEditing = !!user
 
   useEffect(() => {
@@ -25,11 +32,15 @@ function UserFormModal({ isOpen, onClose, onSubmit, user }) {
         role: user.role || 'INTERN',
         active: user.active ?? true,
       })
+      setPhotoPreview(user.profileImageUrl || null)
     } else {
       setForm(initialForm)
+      setPhotoPreview(null)
     }
+    setPhotoFile(null)
     setErrors({})
     setServerError('')
+    setPhotoError('')
   }, [user, isOpen])
 
   const validate = () => {
@@ -73,6 +84,39 @@ function UserFormModal({ isOpen, onClose, onSubmit, user }) {
     }
   }
 
+  const handlePhotoChange = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setPhotoError('')
+
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setPhotoError('Only JPG, PNG, and WebP images are allowed')
+      e.target.value = ''
+      return
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      setPhotoError('File size must not exceed 5MB')
+      e.target.value = ''
+      return
+    }
+
+    setPhotoFile(file)
+    const reader = new FileReader()
+    reader.onloadend = () => setPhotoPreview(reader.result)
+    reader.readAsDataURL(file)
+  }
+
+  const handleRemovePhoto = () => {
+    setPhotoFile(null)
+    setPhotoPreview(null)
+    setPhotoError('')
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setServerError('')
@@ -85,7 +129,7 @@ function UserFormModal({ isOpen, onClose, onSubmit, user }) {
 
     try {
       setSubmitting(true)
-      await onSubmit(payload)
+      await onSubmit(payload, photoFile)
     } catch (err) {
       const message = err.response?.data?.message || 'Operation failed. Please try again.'
       setServerError(message)
@@ -103,6 +147,63 @@ function UserFormModal({ isOpen, onClose, onSubmit, user }) {
             {serverError}
           </div>
         )}
+
+        {/* Profile Photo */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            Profile Photo
+          </label>
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              {photoPreview ? (
+                <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-gray-200 bg-gray-100">
+                  <img
+                    src={photoPreview}
+                    alt="Profile preview"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ) : (
+                <div className="w-20 h-20 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-3xl text-gray-300">
+                    person
+                  </span>
+                </div>
+              )}
+            </div>
+            <div className="flex flex-col gap-2">
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  Choose Photo
+                </button>
+                {photoPreview && (
+                  <button
+                    type="button"
+                    onClick={handleRemovePhoto}
+                    className="px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+              <p className="text-xs text-gray-400">JPG, PNG, or WebP. Max 5MB.</p>
+              {photoError && (
+                <p className="text-xs text-red-500">{photoError}</p>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handlePhotoChange}
+                className="hidden"
+              />
+            </div>
+          </div>
+        </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1.5">

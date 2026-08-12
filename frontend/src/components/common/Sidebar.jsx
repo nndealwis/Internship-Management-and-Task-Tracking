@@ -3,21 +3,24 @@ import { useAuth } from '../../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 
 const navItems = [
-  { name: 'Dashboard', path: '/dashboard', icon: 'dashboard' },
-  { name: 'Users', path: '/users', icon: 'group' },
-  { name: 'Projects', path: '/projects', icon: 'folder' },
-  { name: 'Tasks', path: '/tasks', icon: 'assignment' },
-  { name: 'Work Logs', path: '/worklogs', icon: 'history' },
+  { name: 'Dashboard', path: '/dashboard', icon: 'dashboard', roles: ['ADMIN', 'INTERN'] },
+  { name: 'Users', path: '/users', icon: 'group', roles: ['ADMIN'] },
+  { name: 'Projects', path: '/projects', icon: 'folder', roles: ['ADMIN', 'INTERN'] },
+  { name: 'Tasks', path: '/tasks', icon: 'assignment', roles: ['ADMIN', 'INTERN'] },
+  { name: 'Work Logs', path: '/worklogs', icon: 'history', roles: ['ADMIN', 'INTERN'] },
+  { name: 'Reports', path: '/reports', icon: 'assessment', roles: ['ADMIN'] },
 ]
 
 function Sidebar({ isOpen, onClose }) {
-  const { logout } = useAuth()
+  const { user, logout } = useAuth()
   const navigate = useNavigate()
 
   const handleLogout = () => {
     logout()
     navigate('/login', { replace: true })
   }
+
+  const filteredNavItems = navItems.filter(item => item.roles.includes(user?.role))
 
   return (
     <>
@@ -53,7 +56,7 @@ function Sidebar({ isOpen, onClose }) {
 
         {/* Navigation */}
         <nav className="flex-1 space-y-1">
-          {navItems.map((item) => (
+          {filteredNavItems.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}

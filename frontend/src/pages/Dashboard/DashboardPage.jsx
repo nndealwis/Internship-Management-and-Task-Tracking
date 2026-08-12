@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { getDashboard } from '../../services/dashboardService'
+import { useAuth } from '../../context/AuthContext'
 
 const statusBadge = {
   COMPLETED: 'bg-green-100 text-green-700',
@@ -93,6 +94,8 @@ function EmptyTable({ message }) {
 }
 
 function DashboardPage() {
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'ADMIN'
   const [dashboard, setDashboard] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -124,37 +127,69 @@ function DashboardPage() {
 
   const stats = useMemo(() => {
     if (!dashboard) return []
+    if (isAdmin) {
+      return [
+        {
+          title: 'Total Users',
+          value: dashboard.totalUsers,
+          icon: 'group',
+          iconBg: 'bg-blue-50',
+          iconColor: 'text-blue-600',
+        },
+        {
+          title: 'Total Projects',
+          value: dashboard.totalProjects,
+          icon: 'folder',
+          iconBg: 'bg-slate-100',
+          iconColor: 'text-slate-600',
+        },
+        {
+          title: 'Total Tasks',
+          value: dashboard.totalTasks,
+          icon: 'task_alt',
+          iconBg: 'bg-orange-50',
+          iconColor: 'text-orange-600',
+        },
+        {
+          title: 'Total Work Logs',
+          value: dashboard.totalWorkLogs,
+          icon: 'schedule',
+          iconBg: 'bg-purple-50',
+          iconColor: 'text-purple-600',
+        },
+      ]
+    }
     return [
       {
-        title: 'Total Users',
-        value: dashboard.totalUsers,
-        icon: 'group',
-        iconBg: 'bg-blue-50',
-        iconColor: 'text-blue-600',
-      },
-      {
-        title: 'Total Projects',
+        title: 'My Projects',
         value: dashboard.totalProjects,
         icon: 'folder',
         iconBg: 'bg-slate-100',
         iconColor: 'text-slate-600',
       },
       {
-        title: 'Total Tasks',
+        title: 'My Tasks',
         value: dashboard.totalTasks,
         icon: 'task_alt',
         iconBg: 'bg-orange-50',
         iconColor: 'text-orange-600',
       },
       {
-        title: 'Total Work Logs',
+        title: 'Completed',
+        value: dashboard.completedTasks,
+        icon: 'check_circle',
+        iconBg: 'bg-green-50',
+        iconColor: 'text-green-600',
+      },
+      {
+        title: 'My Work Logs',
         value: dashboard.totalWorkLogs,
         icon: 'schedule',
         iconBg: 'bg-purple-50',
         iconColor: 'text-purple-600',
       },
     ]
-  }, [dashboard])
+  }, [dashboard, isAdmin])
 
   if (loading) return <LoadingState />
 
@@ -182,7 +217,7 @@ function DashboardPage() {
           Dashboard
         </h2>
         <p className="text-sm text-gray-500">
-          Overview of internship management activity
+          {isAdmin ? 'Overview of internship management activity' : `Welcome back, ${user?.name || 'Intern'}`}
         </p>
       </div>
 
@@ -196,7 +231,7 @@ function DashboardPage() {
         <div className="bg-white rounded-xl border border-gray-200/50 shadow-sm flex flex-col">
           <div className="p-6 border-b border-gray-200/50 flex justify-between items-center">
             <h3 className="text-lg font-semibold text-gray-900">
-              Recent Projects
+              {isAdmin ? 'Recent Projects' : 'My Projects'}
             </h3>
             <Link
               to="/projects"
@@ -261,7 +296,7 @@ function DashboardPage() {
         <div className="bg-white rounded-xl border border-gray-200/50 shadow-sm flex flex-col">
           <div className="p-6 border-b border-gray-200/50 flex justify-between items-center">
             <h3 className="text-lg font-semibold text-gray-900">
-              Recent Tasks
+              {isAdmin ? 'Recent Tasks' : 'My Tasks'}
             </h3>
             <Link
               to="/tasks"

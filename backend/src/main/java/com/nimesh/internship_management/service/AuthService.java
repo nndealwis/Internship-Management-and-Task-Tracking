@@ -24,7 +24,7 @@ public class AuthService {
     }
 
     public LoginResponse login(LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
+        User user = userRepository.findByEmail(request.getEmail().trim().toLowerCase())
                 .orElseThrow(() -> new UnauthorizedException("Invalid email or password"));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
@@ -40,6 +40,7 @@ public class AuthService {
                 .name(user.getName())
                 .email(user.getEmail())
                 .role(user.getRole().name())
+                .profileImageUrl(user.getProfileImageUrl())
                 .build();
     }
 }

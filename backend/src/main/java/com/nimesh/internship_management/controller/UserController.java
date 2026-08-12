@@ -4,7 +4,9 @@ import com.nimesh.internship_management.dto.UserRequest;
 import com.nimesh.internship_management.dto.UserResponse;
 import com.nimesh.internship_management.service.UserService;
 import jakarta.validation.Valid;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -28,15 +30,19 @@ public class UserController {
         return userService.getUserById(id);
     }
 
-    @PostMapping
-    public UserResponse createUser(@Valid @RequestBody UserRequest userRequest) {
-        return userService.createUser(userRequest);
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public UserResponse createUser(
+            @RequestPart("userData") @Valid UserRequest userRequest,
+            @RequestPart(value = "profilePhoto", required = false) MultipartFile profilePhoto) {
+        return userService.createUser(userRequest, profilePhoto);
     }
 
-    @PutMapping("/{id}")
-    public UserResponse updateUser(@PathVariable String id,
-            @Valid @RequestBody UserRequest userRequest) {
-        return userService.updateUser(id, userRequest);
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public UserResponse updateUser(
+            @PathVariable String id,
+            @RequestPart("userData") @Valid UserRequest userRequest,
+            @RequestPart(value = "profilePhoto", required = false) MultipartFile profilePhoto) {
+        return userService.updateUser(id, userRequest, profilePhoto);
     }
 
     @DeleteMapping("/{id}")

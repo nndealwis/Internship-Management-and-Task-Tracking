@@ -4,6 +4,10 @@ const getTasks = () => {
   return api.get('/tasks')
 }
 
+const getTasksByProjectId = (projectId) => {
+  return api.get(`/tasks/project/${projectId}`)
+}
+
 const createTask = (task) => {
   return api.post('/tasks', task)
 }
@@ -16,4 +20,4 @@ const deleteTask = (id) => {
   return api.delete(`/tasks/${id}`)
 }
 
-export { getTasks, createTask, updateTask, deleteTask }
+export { getTasks, getTasksByProjectId, createTask, updateTask, deleteTask }

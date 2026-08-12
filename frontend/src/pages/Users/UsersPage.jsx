@@ -1,10 +1,12 @@
 import { useState, useEffect, useMemo } from 'react'
 import { getUsers, createUser, updateUser, deleteUser } from '../../services/userService'
+import { useToast } from '../../components/common/Toast'
 import UserTable from '../../components/users/UserTable'
 import UserFormModal from '../../components/users/UserFormModal'
 import DeleteDialog from '../../components/users/DeleteDialog'
 
 function UsersPage() {
+  const { addToast } = useToast()
   const [users, setUsers] = useState([])
   const [search, setSearch] = useState('')
   const [isFormOpen, setIsFormOpen] = useState(false)
@@ -55,12 +57,14 @@ function UsersPage() {
     setIsDeleteOpen(true)
   }
 
-  const handleFormSubmit = async (formData) => {
+  const handleFormSubmit = async (formData, photoFile) => {
     try {
       if (selectedUser) {
-        await updateUser(selectedUser.id, formData)
+        await updateUser(selectedUser.id, formData, photoFile)
+        addToast('User updated successfully')
       } else {
-        await createUser(formData)
+        await createUser(formData, photoFile)
+        addToast('User created successfully')
       }
       setIsFormOpen(false)
       setSelectedUser(null)
@@ -76,6 +80,7 @@ function UsersPage() {
       setIsDeleteOpen(false)
       setUserToDelete(null)
       await fetchUsers()
+      addToast('User deleted successfully')
     } catch (err) {
       setError('Failed to delete user. Please try again.')
     }

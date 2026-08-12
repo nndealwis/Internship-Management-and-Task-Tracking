@@ -4,12 +4,26 @@ const getUsers = () => {
   return api.get('/users')
 }
 
-const createUser = (user) => {
-  return api.post('/users', user)
+const createUser = (userData, profilePhoto) => {
+  const formData = new FormData()
+  formData.append('userData', new Blob([JSON.stringify(userData)], { type: 'application/json' }))
+  if (profilePhoto) {
+    formData.append('profilePhoto', profilePhoto)
+  }
+  return api.post('/users', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
 }
 
-const updateUser = (id, user) => {
-  return api.put(`/users/${id}`, user)
+const updateUser = (id, userData, profilePhoto) => {
+  const formData = new FormData()
+  formData.append('userData', new Blob([JSON.stringify(userData)], { type: 'application/json' }))
+  if (profilePhoto) {
+    formData.append('profilePhoto', profilePhoto)
+  }
+  return api.put(`/users/${id}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
 }
 
 const deleteUser = (id) => {

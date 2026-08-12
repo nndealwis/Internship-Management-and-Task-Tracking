@@ -1,11 +1,16 @@
 import { useState, useEffect, useMemo } from 'react'
 import { getWorkLogs, createWorkLog, updateWorkLog, deleteWorkLog } from '../../services/workLogService'
 import { getUsers } from '../../services/userService'
+import { useAuth } from '../../context/AuthContext'
+import { useToast } from '../../components/common/Toast'
 import WorkLogTable from '../../components/worklogs/WorkLogTable'
 import WorkLogFormModal from '../../components/worklogs/WorkLogFormModal'
 import DeleteDialog from '../../components/common/DeleteDialog'
 
 function WorkLogsPage() {
+  const { user } = useAuth()
+  const { addToast } = useToast()
+  const isAdmin = user?.role === 'ADMIN'
   const [workLogs, setWorkLogs] = useState([])
   const [users, setUsers] = useState([])
   const [search, setSearch] = useState('')
@@ -30,12 +35,18 @@ function WorkLogsPage() {
     try {
       setLoading(true)
       setError(null)
-      const [logsRes, usersRes] = await Promise.all([
-        getWorkLogs(),
-        getUsers(),
-      ])
+      const logsRes = await getWorkLogs()
       setWorkLogs(logsRes.data)
-      setUsers(usersRes.data)
+      if (isAdmin) {
+        try {
+          const usersRes = await getUsers()
+          setUsers(usersRes.data)
+        } catch {
+          // ignore
+        }
+      } else {
+        setUsers([{ id: user.userId, name: user.name, role: 'INTERN' }])
+      }
     } catch (err) {
       setError('Failed to load work logs. Please try again.')
     } finally {
@@ -45,7 +56,7 @@ function WorkLogsPage() {
 
   useEffect(() => {
     fetchData()
-  }, [])
+  }, [isAdmin])
 
   const filteredLogs = useMemo(() => {
     const query = search.toLowerCase()
@@ -79,8 +90,10 @@ function WorkLogsPage() {
     try {
       if (selectedLog) {
         await updateWorkLog(selectedLog.id, formData)
+        addToast('Work log updated successfully')
       } else {
         await createWorkLog(formData)
+        addToast('Work log created successfully')
       }
       setIsFormOpen(false)
       setSelectedLog(null)
@@ -96,6 +109,7 @@ function WorkLogsPage() {
       setIsDeleteOpen(false)
       setLogToDelete(null)
       await fetchData()
+      addToast('Work log deleted successfully')
     } catch (err) {
       setError('Failed to delete work log. Please try again.')
     }
@@ -109,7 +123,7 @@ function WorkLogsPage() {
             Work Logs
           </h2>
           <p className="text-sm text-gray-500 mt-1">
-            Track daily internship progress and activities
+            {isAdmin ? 'Track daily internship progress and activities' : 'Log your daily progress and activities'}
           </p>
         </div>
         <button
@@ -123,23 +137,25 @@ function WorkLogsPage() {
 
       <div className="bg-white border border-gray-200/50 rounded-xl p-4 flex flex-col lg:flex-row gap-4 items-center justify-between shadow-sm">
         <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
-          <div className="relative min-w-[200px]">
-            <select
-              value={filterIntern}
-              onChange={(e) => setFilterIntern(e.target.value)}
-              className="w-full appearance-none bg-gray-50 border border-gray-200 rounded-lg py-2 pl-3 pr-10 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">All Interns</option>
-              {interns.map((intern) => (
-                <option key={intern.id} value={intern.id}>
-                  {intern.name}
-                </option>
-              ))}
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
-              <span className="material-symbols-outlined text-[18px]">expand_more</span>
+          {isAdmin && (
+            <div className="relative min-w-[200px]">
+              <select
+                value={filterIntern}
+                onChange={(e) => setFilterIntern(e.target.value)}
+                className="w-full appearance-none bg-gray-50 border border-gray-200 rounded-lg py-2 pl-3 pr-10 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">All Interns</option>
+                {interns.map((intern) => (
+                  <option key={intern.id} value={intern.id}>
+                    {intern.name}
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+                <span className="material-symbols-outlined text-[18px]">expand_more</span>
+              </div>
             </div>
-          </div>
+          )}
           <div className="relative min-w-[200px]">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[16px]">
               calendar_today
@@ -202,7 +218,8 @@ function WorkLogsPage() {
           workLogs={filteredLogs}
           userMap={userMap}
           onEdit={handleEdit}
-          onDelete={handleDelete}
+          onDelete={isAdmin ? handleDelete : undefined}
+          isAdmin={isAdmin}
         />
       )}
 
@@ -211,14 +228,18 @@ function WorkLogsPage() {
         onClose={() => { setIsFormOpen(false); setSelectedLog(null) }}
         onSubmit={handleFormSubmit}
         workLog={selectedLog}
+        isAdmin={isAdmin}
+        currentUser={user}
       />
 
-      <DeleteDialog
-        isOpen={isDeleteOpen}
-        onClose={() => { setIsDeleteOpen(false); setLogToDelete(null) }}
-        onConfirm={handleConfirmDelete}
-        itemName={`work log for ${logToDelete?.date || ''}`}
-      />
+      {isAdmin && (
+        <DeleteDialog
+          isOpen={isDeleteOpen}
+          onClose={() => { setIsDeleteOpen(false); setLogToDelete(null) }}
+          onConfirm={handleConfirmDelete}
+          itemName={`work log for ${logToDelete?.date || ''}`}
+        />
+      )}
     </div>
   )
 }

@@ -4,6 +4,10 @@ const getProjects = () => {
   return api.get('/projects')
 }
 
+const getProjectById = (id) => {
+  return api.get(`/projects/${id}`)
+}
+
 const createProject = (project) => {
   return api.post('/projects', project)
 }
@@ -16,4 +20,4 @@ const deleteProject = (id) => {
   return api.delete(`/projects/${id}`)
 }
 
-export { getProjects, createProject, updateProject, deleteProject }
+export { getProjects, getProjectById, createProject, updateProject, deleteProject }
