@@ -1,33 +1,39 @@
-HELP.md
+```
+# Dependencies
+node_modules/
+# Java/Maven
 target/
-.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
-
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
-
-### VS Code ###
+.mvn/wrapper/
+# Environment
+.env
+.env.local
+*.env.*
+# Logs
+*.log
+# IDE
 .vscode/
+.idea/
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+# Temp files
+*.tmp
+*.swp
+*~
+# OS
+.DS_Store
+Thumbs.db
+# Coverage
+coverage/
+htmlcov/
+.coverage
+# Testing
+.mypy_cache/
+.pytest_cache/
+# Distribution / packaging
+.dist/
+.build/
+```
